@@ -169,16 +169,21 @@ def log_dataset_and_batch_info(
         logger.info("  DataLoader prefetch_factor: %s", accel_config.dataloader_prefetch_factor)
 
 
-def _gpu_has_train_rnn_process(gpu_index: int) -> bool:
+def _gpu_has_forbidden_process(gpu_index: int) -> bool:
     """
-    Return True if the given GPU has a Python process running train_rnn_updated (this script).
-    Used to avoid placing a second training job on the same GPU.
+    Return True if the given GPU has a Python or vLLM-related process.
+    This is used to avoid placing a training job on the same GPU that is
+    already running a large LLM server (e.g. vLLM) or another Python job.
     """
     import subprocess
+
     try:
         out = subprocess.run(
             ["nvidia-smi", "-i", str(gpu_index), "--query-compute-apps=pid", "--format=csv,noheader"],
-            capture_output=True, text=True, timeout=5)
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
         if out.returncode != 0:
             return False
         lines = [x.strip() for x in out.stdout.strip().splitlines() if x.strip()]
@@ -189,7 +194,9 @@ def _gpu_has_train_rnn_process(gpu_index: int) -> bool:
             try:
                 with open(f"/proc/{pid}/cmdline", "rb") as f:
                     cmd = f.read().decode("utf-8", errors="ignore").replace("\x00", " ")
-                if "train_rnn_updated" in cmd:
+                lower_cmd = cmd.lower()
+                # Treat any Python or vLLM engine process as "forbidden" for training placement.
+                if ("python" in lower_cmd) or ("vllm" in lower_cmd) or ("vllm::enginecore" in cmd):
                     return True
             except (FileNotFoundError, PermissionError, ValueError):
                 continue
@@ -200,7 +207,9 @@ def _gpu_has_train_rnn_process(gpu_index: int) -> bool:
 
 def pick_cuda_device_index() -> Optional[int]:
     """
-    Choose a CUDA device index: prefer a GPU that has no Python train_rnn_updated task.
+    Choose a CUDA device index: prefer a GPU that has no Python/vLLM compute task.
+    On multi-GPU systems, this will skip GPUs that are already running Python or vLLM
+    processes (e.g., a vLLM LLM server), so that training can run on a different card.
     If multiple GPUs exist, returns the first index with no such process; otherwise 0.
     Call this before any torch.cuda init and set CUDA_VISIBLE_DEVICES to the returned index.
     Returns None if no NVIDIA GPU is visible (or nvidia-smi is unavailable).
@@ -227,14 +236,15 @@ def pick_cuda_device_index() -> Optional[int]:
         if not indices:
             return None
         if len(indices) == 1:
-            idx = indices[0]
             # Single GPU: either use it or nothing else is available anyway
-            return idx
-        # Multi-GPU: prefer one without train_rnn_updated running
+            return indices[0]
+
+        # Multi-GPU: prefer one without Python/vLLM jobs running
         for idx in indices:
-            if not _gpu_has_train_rnn_process(idx):
+            if not _gpu_has_forbidden_process(idx):
                 return idx
-        # If all have train_rnn_updated, just fall back to the first
+
+        # If all have Python/vLLM jobs, just fall back to the first
         return indices[0]
     except Exception:
         return None
