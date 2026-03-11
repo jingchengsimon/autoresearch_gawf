@@ -1,0 +1,27 @@
+Experiment finished.
+
+model_type: rnn,
+dataset: 4h,
+dataset_mode: sector,
+num_epochs: 10,
+
+hidden_size: 256
+lr: 0.001
+weight_decay: 0.0
+dropout: 0.2
+optimizer: adamw
+
+best_val_acc_char: {best_val_acc_char}
+best_val_acc_pos: {best_val_acc_pos}
+
+Follow program_gawf.md.
+
+Propose the next experiment.
+
+Rules:
+- modify ONLY train_gawf.py
+- make ONE small change
+- aim to reduce overfitting or improve validation accuracy
+- do NOT restate files
+- do NOT explain program_gawf.md
+- output only the patch for train_gawf.py
