@@ -1,9 +1,4 @@
-"""
-Fixed preparation layer for GAWF training. Not edited by autoresearch.
-
-Provides: MC_RNN_Dataset, prepare_experiment(), network_train().
-Data loading, dataset creation, model registry, logger, and seed are handled here.
-"""
+"""Fixed preparation layer for GAWF training (data, device, network_train)."""
 import os
 import numpy as np
 import torch
@@ -41,19 +36,9 @@ torch.set_num_threads(4)
 # -----------------------------------------------------------------------------
 
 class MC_RNN_Dataset(Dataset):
-    def __init__(self, data, labels, frame_num=32, chan_num=2, use_sector=False, num_sectors=9,
+    def __init__(self, data, labels, frame_num=32, chan_num=2,
+                 use_sector=False, num_sectors=9,
                  max_chars=15, predict_all_chars=False):
-        """
-        Args:
-            data (np.ndarray): Array of shape (num_frames_total, height, width); supports float32 for faster loading.
-            labels (np.ndarray): DataFrame with columns ['fg_char_id', 'fg_char_x', 'fg_char_y', 'bg_char_ids']
-            frame_num (int): Number of frames to stack for input as multichannel image
-            chan_num (int): Number of channels in the input images. Each channel is a previous frame.
-            use_sector (bool): If True, map (x, y) position to sector id 0-(num_sectors-1)
-            num_sectors (int): Number of sectors, e.g., 9 means 0-8 sectors (3x3 grid)
-            max_chars (int): Maximum number of characters per frame (for padding)
-            predict_all_chars (bool): If True, predict all characters (fg+bg), else only fg
-        """
         self.data = data
         self.frame_num = frame_num
         self.chan_num = chan_num

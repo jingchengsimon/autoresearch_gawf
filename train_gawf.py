@@ -1,9 +1,3 @@
-"""
-Editable GAWF training script for autoresearch. This is the only file that may be edited.
-
-Imports preparation and network_train from prepare_gawf; runs phase-based training
-(RNN -> GAWF -> FFN/DANN) and writes metric.json.
-"""
 import os
 import sys
 import json
@@ -13,21 +7,17 @@ from prepare_gawf import prepare_experiment, network_train
 from utils.train_helpers import save_results, log_experiment_config, log_experiment_start
 
 
-# -----------------------------------------------------------------------------
-# Config (edit here for 4h vs 40h, epochs, phases, hyperparameters)
-# -----------------------------------------------------------------------------
-DATA_SUFFIX = ""           # "" = 4h data; use "40h" for 40h (slower, switch if overfitting)
-DATASET_MODE = "sector"    # "sector" (num_pos=9) or "coord" or "allchars"
+# Minimal config for autoresearch
+DATA_SUFFIX = ""           # "" = 4h, "40h" = 40h
+DATASET_MODE = "sector"    # "sector" | "coord" | "allchars"
 NUM_EPOCHS = 50
 SEED = 42
 USE_MMAP = True
 USE_ACCELERATION = True
 RESULT_SUFFIX = "gawf"
 
-# Phase order: run these model types in sequence (autoresearch can reorder or subset)
 MODEL_PHASES = ["rnn", "gawf"]
 
-# Hyperparameters per phase (or shared). Edit for tuning.
 HIDDEN_SIZE = 256
 LR = 0.001
 WEIGHT_DECAY = 0.0
@@ -36,7 +26,6 @@ OPTIMIZER = "adamw"
 NOFB = False
 FB_START_EPOCH = 999999
 
-# Optional: override per model_type (e.g. different lr for gawf)
 PHASE_OVERRIDES = {
     # "gawf": {"lr": 0.0005, "nofb": True, "fb_start_epoch": 10},
 }
@@ -50,7 +39,6 @@ def _tqdm_ok():
 
 
 def run_one_experiment(prep, model_type, hidden_size, lr, weight_decay, dropout_rate, num_epochs, optim, nofb, fb_start_epoch):
-    """Create model, train with network_train, return results and metrics for metric.json."""
     train_ds = prep["train_ds"]
     val_ds = prep["val_ds"]
     num_pos = prep["num_pos"]
@@ -151,8 +139,6 @@ def run_one_experiment(prep, model_type, hidden_size, lr, weight_decay, dropout_
 
 
 def main():
-    # Always run training on GPU 1 so that GPU 0 can be used by Qwen/vLLM.
-    # This must happen before any CUDA initialization in prepare_experiment.
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
     use_sector_mode = DATASET_MODE == "sector"

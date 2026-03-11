@@ -1,4 +1,10 @@
-# autoresearch – AIM3 RNN / GAWF / FFN
+# GAWF autoresearch – core rules
+
+- only modify `train_gawf.py`
+- 4h data first, 50 epochs
+- phase order: RNN → GAWF → FFN
+- if persistent overfit on RNN, switch to 40h (float32) data
+# Legacy detailed spec (can be ignored by aider)
 
 This repository runs an autoresearch loop where an LLM autonomously proposes and tests model improvements.
 
