@@ -14,9 +14,9 @@ NUM_EPOCHS = 20
 SEED = 42
 USE_MMAP = True
 USE_ACCELERATION = True
-RESULT_SUFFIX = "gawf"
+RESULT_SUFFIX = "rnn"
 
-MODEL_PHASES = ["rnn", "gawf"]
+MODEL_PHASES = ["rnn"]
 
 HIDDEN_SIZE = 256
 LR = 0.001

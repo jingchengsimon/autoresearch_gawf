@@ -3,7 +3,7 @@ Experiment finished.
 model_type: rnn,
 dataset: 4h,
 dataset_mode: sector,
-num_epochs: 10,
+num_epochs: 20,
 
 hidden_size: 256
 lr: 0.001
@@ -11,8 +11,10 @@ weight_decay: 0.0
 dropout: 0.2
 optimizer: adamw
 
-best_val_acc_char: {best_val_acc_char}
-best_val_acc_pos: {best_val_acc_pos}
+best_train_acc_char: 73.47
+best_train_acc_pos: 93.63
+best_val_acc_char: 56.46%
+best_val_acc_pos: 85.36
 
 Follow program_gawf.md.
 
