@@ -19,7 +19,7 @@ RESULT_SUFFIX = "rnn"
 MODEL_PHASES = ["rnn"]
 
 HIDDEN_SIZE = 256
-LR = 0.001  # Increased learning rate to improve training
+LR = 0.0005  # Reduced learning rate to improve stability and reduce overfitting
 WEIGHT_DECAY = 0.0  # Removed weight decay to avoid over-constraining
 DROPOUT = 0.3  # Kept dropout at 0.3 to balance overfitting and training accuracy
 OPTIMIZER = "adamw"
