@@ -10,18 +10,18 @@ from utils.train_helpers import save_results, log_experiment_config, log_experim
 # Minimal config for autoresearch
 DATA_SUFFIX = ""           # "" = 4h, "40h" = 40h
 DATASET_MODE = "sector"    # "sector" | "coord" | "allchars"
-NUM_EPOCHS = 10
+NUM_EPOCHS = 50
 SEED = 42
 USE_MMAP = True
 USE_ACCELERATION = True
-RESULT_SUFFIX = "rnn"
+RESULT_SUFFIX = "gawf"
 
-MODEL_PHASES = ["rnn"]
+MODEL_PHASES = ["rnn", "gawf"]
 
 HIDDEN_SIZE = 256
 LR = 0.001
 WEIGHT_DECAY = 0.0
-DROPOUT = 0.0
+DROPOUT = 0.2  # Added dropout to reduce overfitting
 OPTIMIZER = "adamw"
 NOFB = False
 FB_START_EPOCH = 999999
@@ -70,6 +70,11 @@ def run_one_experiment(prep, model_type, hidden_size, lr, weight_decay, dropout_
         "Created %s (predict_all_chars=%s, max_chars=%s, dropout=%s, hidden_size=%s)",
         model_type.upper(), predict_all_chars, max_chars, dropout_rate, hidden_size,
     )
+
+    try:
+        mdl = torch.compile(mdl)
+    except Exception as e:
+        logger.warning("torch.compile failed, eager mode: %s", e)
 
     results = network_train(
         mdl,
