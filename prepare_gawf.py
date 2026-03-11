@@ -173,13 +173,8 @@ def prepare_experiment(
                    default_config (num_epochs, etc. for reference).
     """
     set_seed(seed)
-
-    cuda_index = pick_cuda_device_index()
-    if cuda_index is not None:
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(cuda_index)
-        device = "cuda"
-    else:
-        device = "cpu"
+    # Device is determined by CUDA visibility set before this function is called
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     base_path = get_base_path(override=data_dir or None)
     stim_train_path, label_train_path, stim_val_path, label_val_path = prepare_data_paths(

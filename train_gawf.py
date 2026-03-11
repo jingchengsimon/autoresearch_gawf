@@ -151,6 +151,10 @@ def run_one_experiment(prep, model_type, hidden_size, lr, weight_decay, dropout_
 
 
 def main():
+    # Always run training on GPU 1 so that GPU 0 can be used by Qwen/vLLM.
+    # This must happen before any CUDA initialization in prepare_experiment.
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
     use_sector_mode = DATASET_MODE == "sector"
     predict_all_chars = DATASET_MODE == "allchars"
 
