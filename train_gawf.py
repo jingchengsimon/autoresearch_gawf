@@ -10,7 +10,7 @@ from utils.train_helpers import save_results, log_experiment_config, log_experim
 # Minimal config for autoresearch
 DATA_SUFFIX = ""           # "" = 4h, "40h" = 40h
 DATASET_MODE = "sector"    # "sector" | "coord" | "allchars"
-NUM_EPOCHS = 20
+NUM_EPOCHS = 40
 SEED = 42
 USE_MMAP = True
 USE_ACCELERATION = True
