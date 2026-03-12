@@ -1,7 +1,6 @@
 import os
 import sys
 import json
-import torch
 
 from prepare_gawf import prepare_experiment, network_train
 from utils.train_helpers import save_results, log_experiment_config, log_experiment_start
@@ -10,7 +9,7 @@ from utils.train_helpers import save_results, log_experiment_config, log_experim
 # Minimal config for autoresearch
 DATA_SUFFIX = ""           # "" = 4h, "40h" = 40h
 DATASET_MODE = "sector"    # "sector" | "coord" | "allchars"
-NUM_EPOCHS = 30
+NUM_EPOCHS = 10
 SEED = 42
 USE_MMAP = True
 USE_ACCELERATION = True
