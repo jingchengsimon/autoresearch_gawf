@@ -13,8 +13,8 @@ from typing import Any, Dict, Optional
 # =========================
 
 AIDER_MODEL = "openai/QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ"
-TRAIN_CMD = "CUDA_VISIBLE_DEVICES=1 python train_gawf.py"
-PROGRAM_FILE = "program.md"
+TRAIN_CMD = "python train_gawf.py"
+PROGRAM_FILE = "program_gawf.md"
 TRAIN_FILE = "train_gawf.py"
 METRICS_FILE = "metrics.json"
 OUTPUT_LOG = "output.log"
@@ -22,9 +22,9 @@ RESULTS_TSV = "results.tsv"
 STOP_FILE = "STOP_AUTORESEARCH"
 
 # Search control
-MAX_TOTAL_EXPERIMENTS = 30
-MAX_4H_EXPERIMENTS = 10
-MAX_NO_IMPROVEMENT = 6
+MAX_TOTAL_EXPERIMENTS = 10
+MAX_4H_EXPERIMENTS = min(MAX_TOTAL_EXPERIMENTS, 6)
+MAX_NO_IMPROVEMENT = 5
 
 # Success criteria, aligned with program.md
 VAL_CHAR_TOL = 0.5       # val_acc_char tolerance
