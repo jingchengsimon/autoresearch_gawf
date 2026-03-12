@@ -24,3 +24,5 @@ results.tsv
 .aider*
 stimuli/*
 results/*
+logs/*
+output.log

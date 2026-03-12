@@ -199,7 +199,7 @@ def run_one_experiment(prep, model_type, hidden_size, lr, weight_decay, dropout_
         "final_train_loss_pos": final_train_loss_pos,
         "final_val_loss_pos": final_val_loss_pos,
     }
-    metric_path = os.path.join(results_dir, "metric.json")
+    metric_path = os.path.join(results_dir, "metrics.json")
     with open(metric_path, "w", encoding="utf-8") as f:
         json.dump(metric_summary, f, indent=2)
     logger.info("Wrote %s", metric_path)

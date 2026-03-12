@@ -16,13 +16,15 @@ AIDER_MODEL = "openai/QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ"
 TRAIN_CMD = "python train_gawf.py"
 PROGRAM_FILE = "program_gawf.md"
 TRAIN_FILE = "train_gawf.py"
-METRICS_FILE = "metrics.json"
+METRICS_FILE = "results/rnn/models/metrics.json"
 OUTPUT_LOG = "output.log"
 RESULTS_TSV = "results.tsv"
 STOP_FILE = "STOP_AUTORESEARCH"
+LOG_DIR = "logs"
+LOOP_LOG = os.path.join(LOG_DIR, "loop.log")
 
 # Search control
-MAX_TOTAL_EXPERIMENTS = 10
+MAX_TOTAL_EXPERIMENTS = 5
 MAX_4H_EXPERIMENTS = min(MAX_TOTAL_EXPERIMENTS, 6)
 MAX_NO_IMPROVEMENT = 5
 
@@ -50,6 +52,26 @@ COMMIT_RESULTS_SNAPSHOT = False
 # =========================
 # Utilities
 # =========================
+
+
+def ensure_logs_dir() -> None:
+    Path(LOG_DIR).mkdir(parents=True, exist_ok=True)
+
+
+def log_loop(msg: str) -> None:
+    """
+    Log a loop status message to both stdout and logs/loop.log.
+    """
+    text = msg.rstrip("\n")
+    print(text)
+    try:
+        ensure_logs_dir()
+        with open(LOOP_LOG, "a", encoding="utf-8") as f:
+            f.write(text + "\n")
+    except Exception:
+        # Logging failures should not crash the loop
+        pass
+
 
 def run_cmd(
     cmd: str,
@@ -217,10 +239,14 @@ def summarize_metrics(metrics: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def call_aider(prompt: str) -> None:
+def call_aider(prompt: str, trial_index: int) -> None:
     """
     Single-shot aider call. It will edit train_gawf.py and exit.
+    Full stdout/stderr are saved to logs/aider_trial_XXX.log.
     """
+    ensure_logs_dir()
+    log_path = Path(LOG_DIR) / f"aider_trial_{trial_index:03d}.log"
+
     cmd = (
         f"aider "
         f"--model {shlex.quote(AIDER_MODEL)} "
@@ -230,11 +256,26 @@ def call_aider(prompt: str) -> None:
         f"{shlex.quote(TRAIN_FILE)} "
         f"--message {shlex.quote(prompt)}"
     )
-    p = run_cmd(cmd, env=ENV_OVERRIDES, capture_output=True)
-    print(p.stdout)
+
+    merged_env = os.environ.copy()
+    merged_env.update(ENV_OVERRIDES)
+
+    with open(log_path, "w", encoding="utf-8") as log_f:
+        p = subprocess.run(
+            cmd,
+            shell=True,
+            text=True,
+            stdout=log_f,
+            stderr=subprocess.STDOUT,
+            env=merged_env,
+            stdin=subprocess.DEVNULL,
+        )
+
     if p.returncode != 0:
-        print(p.stderr, file=sys.stderr)
-        raise RuntimeError("Aider call failed")
+        raise RuntimeError(
+            f"Aider call failed for trial {trial_index:03d}, "
+            f"see {log_path}"
+        )
 
 
 def run_training(dataset_suffix: str) -> tuple[str, int]:
@@ -325,13 +366,14 @@ def description_from_metrics(metrics: Optional[Dict[str, Any]]) -> str:
 
 def main() -> None:
     ensure_results_tsv()
+    ensure_logs_dir()
 
     if not file_exists(PROGRAM_FILE):
         raise FileNotFoundError(f"Missing {PROGRAM_FILE}")
     if not file_exists(TRAIN_FILE):
         raise FileNotFoundError(f"Missing {TRAIN_FILE}")
 
-    print(f"[loop] branch={get_head_branch()} commit={get_head_commit()}")
+    log_loop(f"[loop] branch={get_head_branch()} commit={get_head_commit()}")
 
     best_metrics_global: Optional[Dict[str, Any]] = None
     best_metrics_4h: Optional[Dict[str, Any]] = None
@@ -344,12 +386,12 @@ def main() -> None:
 
     while total_trials < MAX_TOTAL_EXPERIMENTS:
         if file_exists(STOP_FILE):
-            print("[loop] stop file detected, exiting gracefully.")
+            log_loop("[loop] stop file detected, exiting gracefully.")
             break
 
         # Escalate to 40h if needed
         if current_dataset_suffix == "" and should_switch_to_40h(four_h_trials, best_metrics_4h, best_metrics_4h):
-            print("[loop] switching from 4h to 40h")
+            log_loop("[loop] switching from 4h to 40h")
             changed = set_dataset_suffix_in_train_file("40h")
             if changed:
                 git_commit_all("chore: switch dataset from 4h to 40h")
@@ -367,19 +409,21 @@ def main() -> None:
         else:
             prompt = summarize_metrics(best_metrics_global)
 
-        print(f"[loop] trial={total_trials + 1}, dataset={current_dataset_suffix or '4h'}")
-        call_aider(prompt)
+        trial_index = total_trials + 1
+        log_loop(f"[loop] trial={trial_index}, dataset={current_dataset_suffix or '4h'}")
+        log_loop("[loop] calling aider...")
+        call_aider(prompt, trial_index)
+        log_loop("[loop] aider finished.")
 
         # Local commit after aider edit
         git_commit_all(f"exp: trial {total_trials + 1} propose next experiment")
 
         # Run training
-        print("[loop] starting training...")
+        log_loop("[loop] starting training...")
         status, returncode = run_training(current_dataset_suffix)
-        print("[loop] training finished, reading metrics...")
+        log_loop(f"[loop] training finished with status={status}")
         metrics = load_metrics_or_none()
         commit = get_head_commit()
-        print("[loop] metrics loaded and commit loaded.")
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
 
         if status != "ok" or metrics is None:
@@ -404,9 +448,9 @@ def main() -> None:
             total_trials += 1
             if current_dataset_suffix == "":
                 four_h_trials += 1
-            print(f"[loop] training failed: {status}")
+            log_loop(f"[loop] training failed: status={status}, returncode={returncode}")
             if no_improvement_count >= MAX_NO_IMPROVEMENT:
-                print("[loop] too many consecutive failures/no improvement, stopping.")
+                log_loop("[loop] too many consecutive failures/no improvement, stopping.")
                 break
             continue
 
@@ -447,7 +491,7 @@ def main() -> None:
         maybe_commit_results_snapshot()
         total_trials += 1
 
-        print(
+        log_loop(
             "[loop] done "
             f"trial={total_trials} "
             f"status={status_label} "
@@ -458,10 +502,10 @@ def main() -> None:
 
         # Stop conditions
         if no_improvement_count >= MAX_NO_IMPROVEMENT:
-            print("[loop] no improvement limit reached, stopping.")
+            log_loop("[loop] no improvement limit reached, stopping.")
             break
 
-    print("[loop] finished.")
+    log_loop("[loop] finished.")
 
 
 if __name__ == "__main__":
