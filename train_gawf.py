@@ -9,24 +9,25 @@ from utils.train_helpers import save_results, log_experiment_config, log_experim
 # Minimal config for autoresearch
 DATA_SUFFIX = ""           # "" = 4h, "40h" = 40h
 DATASET_MODE = "sector"    # "sector" | "coord" | "allchars"
-NUM_EPOCHS = 50
+NUM_EPOCHS = 100
 SEED = 42
 USE_MMAP = True
-USE_ACCELERATION = True
+USE_ACCELERATION = False
 RESULT_SUFFIX = "rnn_phase1"
 
-MODEL_PHASES = ["rnn"]
+MODEL_PHASES = ["rnn", "gawf"]
 
-HIDDEN_SIZE = 256
-LR = 0.0005  # Reduced learning rate to improve stability and reduce overfitting
-WEIGHT_DECAY = 0.0  # Removed weight decay to avoid over-constraining
-DROPOUT = 0.3  # Kept dropout at 0.3 to balance overfitting and training accuracy
+HIDDEN_SIZE = 512
+LR = 0.0001  # Reduced learning rate to improve stability and reduce overfitting
+WEIGHT_DECAY = 1e-4  # Added weight decay to avoid over-constraining
+DROPOUT = 0.5  # Increased dropout to balance overfitting and training accuracy
 OPTIMIZER = "adamw"
 NOFB = False
 FB_START_EPOCH = 999999
 
 PHASE_OVERRIDES = {
-    "rnn": {"lr": 0.0005, "nofb": True, "fb_start_epoch": 10},
+    "rnn": {"lr": 0.0001, "nofb": True, "fb_start_epoch": 10},
+    "gawf": {"lr": 0.0001, "nofb": True, "fb_start_epoch": 10, "hidden_size": 512, "dropout": 0.5},
 }
 
 
