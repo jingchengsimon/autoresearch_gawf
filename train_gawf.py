@@ -18,7 +18,7 @@ RESULT_SUFFIX = "rnn_phase1"
 MODEL_PHASES = ["rnn", "gawf"]
 
 HIDDEN_SIZE = 512
-LR = 0.0001  # Reduced learning rate to improve stability and reduce overfitting
+LR = 0.001  # Slightly increased learning rate to potentially improve validation accuracy
 WEIGHT_DECAY = 1e-4  # Added weight decay to avoid over-constraining
 DROPOUT = 0.5  # Increased dropout to balance overfitting and training accuracy
 OPTIMIZER = "adamw"
@@ -26,7 +26,7 @@ NOFB = False
 FB_START_EPOCH = 999999
 
 PHASE_OVERRIDES = {
-    "rnn": {"lr": 0.0001, "nofb": True, "fb_start_epoch": 10},
+    "rnn": {"lr": 0.001, "nofb": True, "fb_start_epoch": 10},
     "gawf": {"lr": 0.0001, "nofb": True, "fb_start_epoch": 10, "hidden_size": 512, "dropout": 0.5},
 }
 
