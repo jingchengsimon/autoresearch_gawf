@@ -13,7 +13,7 @@ NUM_EPOCHS = 100           # Increased from 50 to allow better convergence
 SEED = 42
 USE_MMAP = True
 USE_ACCELERATION = False
-RESULT_SUFFIX = "rnn_phase1"  # Keeping this as it matches Phase 1
+RESULT_SUFFIX = ""  # Empty suffix for baseline 4h dataset as per Phase 1
 
 MODEL_PHASES = ["rnn"]     # Changed to focus only on RNN for Phase 1
 
