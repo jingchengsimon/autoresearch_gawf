@@ -13,17 +13,17 @@ NUM_EPOCHS = 100           # Increased from 50 to allow better convergence
 SEED = 42
 USE_MMAP = True
 USE_ACCELERATION = False
-RESULT_SUFFIX = "rnn_phase1"
+RESULT_SUFFIX = "rnn_phase1"  # Keeping this as it matches Phase 1
 
-MODEL_PHASES = ["rnn", "gawf"]
+MODEL_PHASES = ["rnn"]     # Changed to focus only on RNN for Phase 1
 
 HIDDEN_SIZE = 512
 LR = 0.001  # Slightly increased learning rate to potentially improve validation accuracy
 WEIGHT_DECAY = 1e-4  # Added weight decay to avoid over-constraining
-DROPOUT = 0.5  # Increased dropout to balance overfitting and training accuracy
+DROPOUT = 0.3  # Reduced dropout to maintain training accuracy while controlling overfitting
 OPTIMIZER = "adamw"
-NOFB = False
-FB_START_EPOCH = 999999
+NOFB = True    # Set to True for Phase 1 RNN optimization
+FB_START_EPOCH = 10  # Start feedback at epoch 10
 
 PHASE_OVERRIDES = {
     "rnn": {"lr": 0.001, "nofb": True, "fb_start_epoch": 10, "dropout": 0.3},
