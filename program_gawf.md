@@ -2,6 +2,21 @@
 
 Editable file: train_gawf.py only. Prefer small, controlled changes. Avoid large simultaneous modifications.
 
+Do not change from sector mode to coord mode unless explicitly instructed.
+Current autoresearch should stay in sector mode.
+
+Do NOT rename existing variables, function arguments, config keys, helper names, or logging field names unless absolutely necessary.
+
+Preserve all existing interfaces and signatures across files.
+
+In particular:
+- do not rename config variables only for style
+- do not rename arguments expected by helper functions
+- do not rename metric field names
+- do not change dataset mode names unless explicitly required
+
+Prefer changing only values, not names.
+
 Datasets:
 Stage 1: 4h dataset (default, no suffix)
 Stage 2: 40h dataset (suffix="40h")
@@ -41,7 +56,7 @@ hidden_size
 learning_rate
 optimizer
 weight_decay
-dropout
+dropout_rate
 num_epochs
 feedback parameters (for gawf)
 

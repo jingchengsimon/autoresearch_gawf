@@ -8,7 +8,7 @@ from utils.train_helpers import save_results, log_experiment_config, log_experim
 
 # Minimal config for autoresearch
 DATA_SUFFIX = ""           # "" = 4h, "40h" = 40h
-DATASET_MODE = "coord"     # "sector" | "coord" | "allchars"
+DATASET_MODE = "sector"     # "sector" | "coord" | "allchars"
 NUM_EPOCHS = 100           # Increased from 50 to allow better convergence
 SEED = 42
 USE_MMAP = True
@@ -20,14 +20,14 @@ MODEL_PHASES = ["rnn"]     # Changed to focus only on RNN for Phase 1
 HIDDEN_SIZE = 512
 LR = 0.001  # Slightly increased learning rate to potentially improve validation accuracy
 WEIGHT_DECAY = 1e-4  # Added weight decay to avoid over-constraining
-DROPOUT = 0.25  # Slightly reduced dropout to maintain training accuracy while controlling overfitting
+DROPOUT_RATE = 0.25  # Slightly reduced dropout to maintain training accuracy while controlling overfitting
 OPTIMIZER = "adamw"
 NOFB = True    # Set to True for Phase 1 RNN optimization
 FB_START_EPOCH = 10  # Start feedback at epoch 10
 
 PHASE_OVERRIDES = {
-    "rnn": {"lr": 0.001, "nofb": True, "fb_start_epoch": 10, "dropout": 0.25},
-    "gawf": {"lr": 0.0001, "nofb": True, "fb_start_epoch": 10, "hidden_size": 512, "dropout": 0.5},
+    "rnn": {"lr": 0.001, "nofb": True, "fb_start_epoch": 10, "dropout_rate": 0.25},
+    "gawf": {"lr": 0.0001, "nofb": True, "fb_start_epoch": 10, "hidden_size": 512, "dropout_rate": 0.5},
 }
 
 
@@ -199,7 +199,7 @@ def run_one_experiment(prep, model_type, hidden_size, lr, weight_decay, dropout_
         "final_train_loss_pos": final_train_loss_pos,
         "final_val_loss_pos": final_val_loss_pos,
     }
-    metric_path = os.path.join(results_dir, "metrics.json")
+    metric_path = ("./metrics.json") # os.path.join(results_dir, "metrics.json")
     with open(metric_path, "w", encoding="utf-8") as f:
         json.dump(metric_summary, f, indent=2)
     logger.info("Wrote %s", metric_path)
@@ -243,7 +243,7 @@ def main():
         hidden_size = overrides.get("hidden_size", HIDDEN_SIZE)
         lr = overrides.get("lr", LR)
         weight_decay = overrides.get("weight_decay", WEIGHT_DECAY)
-        dropout_rate = overrides.get("dropout", DROPOUT)
+        dropout_rate = overrides.get("dropout_rate", DROPOUT_RATE)
         optim = overrides.get("optimizer", OPTIMIZER)
         nofb = overrides.get("nofb", NOFB)
         fb_start_epoch = overrides.get("fb_start_epoch", FB_START_EPOCH)
