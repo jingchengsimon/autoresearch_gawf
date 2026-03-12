@@ -374,9 +374,12 @@ def main() -> None:
         git_commit_all(f"exp: trial {total_trials + 1} propose next experiment")
 
         # Run training
+        print("[loop] starting training...")
         status, returncode = run_training(current_dataset_suffix)
+        print("[loop] training finished, reading metrics...")
         metrics = load_metrics_or_none()
         commit = get_head_commit()
+        print("[loop] metrics loaded and commit loaded.")
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
 
         if status != "ok" or metrics is None:
