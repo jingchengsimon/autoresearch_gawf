@@ -1,77 +1,68 @@
-# GAWF autoresearch protocol
+# GAWF autoresearch program
 
-Goal: maximize validation accuracy while minimizing overfitting.
+Editable file: train_gawf.py only. Prefer small, controlled changes. Avoid large simultaneous modifications.
 
-Editable file:
-- train_gawf.py
+Datasets:
+Stage 1: 4h dataset (default, no suffix)
+Stage 2: 40h dataset (suffix="40h")
 
-Read-only files:
-- prepare_gawf.py
-- engine/*
-- models/*
-- tasks/*
-- utils/*
+Primary objective:
+Improve validation character accuracy (val_acc_char) while keeping training accuracy strong and reducing the train–validation generalization gap.
 
-Only modify train_gawf.py.
+Metric definitions:
 
-Dataset policy:
-- default dataset: 4h (no suffix)
-- training schedule: 50 epochs
-- if repeated RNN experiments show persistent overfitting, switch to 40h float32 dataset
-- 40h runs are slower and should be used sparingly
+gap_char = train_acc_char - val_acc_char
+gap_pos  = train_acc_pos  - val_acc_pos
 
-Research phase order (do not skip):
-1. RNN optimization
-2. GAWF optimization
-3. FFN / DANN optimization
+Success criteria:
 
-Phase 1: RNN
-Models: rnn, gru, lstm  
-Goal: establish strong baseline and reduce overfitting
+A modification is considered successful only if:
 
-Search space:
-- hidden_size
-- learning_rate
-- dropout
-- weight_decay
-- optimizer
+1. val_acc_char increases
+   OR stays within ±0.5% of the previous best
 
-Phase 2: GAWF
-Focus on feedback mechanisms.
+2. train_acc_char does NOT decrease by more than 1.0%
 
-Search space:
-- hidden_size
-- learning_rate
-- dropout
-- weight_decay
-- nofb
-- fb_start_epoch
-- optimizer
+3. preference is given to configurations that reduce gap_char
 
-Phase 3: FFN / DANN
-Focus on model capacity and regularization.
+Experiment ranking priority:
 
-Search space:
-- hidden_size
-- dropout
-- learning_rate
-- optimizer
+1. higher val_acc_char
+2. smaller gap_char
+3. stable train_acc_char
+4. secondary metric: val_acc_pos
 
-Overfitting signals:
-- training accuracy increases while validation stagnates or drops
-- validation loss increases
-- large train–validation gap
+Avoid solutions that improve validation only by collapsing training accuracy.
 
-Experiment rules:
-- make only small changes each experiment
-- prefer simpler solutions
-- discard changes that add complexity with little gain
+Allowed modifications:
 
-Training command:
-python train_gawf.py
+model_type (rnn / gru / lstm / gawf)
+hidden_size
+learning_rate
+optimizer
+weight_decay
+dropout
+num_epochs
+feedback parameters (for gawf)
 
-Each run outputs metrics (e.g. val_acc).
+num_epochs may increase for convergence but should not exceed 150.
 
-Record experiments in results.tsv:
+Overfitting detection:
 
-commit	val_acc	memory_gb	status	description
+overfit_flag = true if
+
+gap_char > 10
+OR
+gap_pos > 10
+
+Dataset escalation rule:
+
+If 10 distinct experiments on the 4h dataset still show large overfitting
+and val_acc_char does not significantly improve,
+stop searching on 4h and switch to the 40h dataset.
+
+Research phases:
+
+Phase 1: RNN optimization
+Phase 2: GAWF optimization
+Phase 3: FFN / DANN comparison

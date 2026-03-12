@@ -10,7 +10,7 @@ from utils.train_helpers import save_results, log_experiment_config, log_experim
 # Minimal config for autoresearch
 DATA_SUFFIX = ""           # "" = 4h, "40h" = 40h
 DATASET_MODE = "sector"    # "sector" | "coord" | "allchars"
-NUM_EPOCHS = 40
+NUM_EPOCHS = 3
 SEED = 42
 USE_MMAP = True
 USE_ACCELERATION = True
@@ -36,6 +36,42 @@ def _tqdm_ok():
     return not os.environ.get("DISABLE_TQDM", "").lower() in ("1", "true", "yes") and (
         os.environ.get("ENABLE_TQDM", "").lower() in ("1", "true", "yes") or (sys.stdout.isatty() and term_ok)
     )
+
+
+def _round2(x):
+    if x is None:
+        return None
+    return float(round(float(x), 2))
+
+
+def _safe_last(arr):
+    if arr is None or len(arr) == 0:
+        return None
+    return _round2(arr[-1])
+
+
+def _safe_max(arr):
+    if arr is None or len(arr) == 0:
+        return None
+    return _round2(max(arr))
+
+
+def _safe_best_epoch_1based(arr):
+    if arr is None or len(arr) == 0:
+        return None
+    best_idx = 0
+    best_val = arr[0]
+    for i, v in enumerate(arr):
+        if v > best_val:
+            best_val = v
+            best_idx = i
+    return _round2(best_idx + 1)
+
+
+def _gap(train_final, val_final):
+    if train_final is None or val_final is None:
+        return None
+    return _round2(train_final - val_final)
 
 
 def run_one_experiment(prep, model_type, hidden_size, lr, weight_decay, dropout_rate, num_epochs, optim, nofb, fb_start_epoch):
@@ -91,13 +127,38 @@ def run_one_experiment(prep, model_type, hidden_size, lr, weight_decay, dropout_
     )
 
     actual_epochs = results.get("actual_epochs", num_epochs)
+
+    train_acc_char = results.get("train_acc_char")
     val_acc_char = results.get("val_acc_char")
+    train_acc_pos = results.get("train_acc_pos")
     val_acc_pos = results.get("val_acc_pos")
 
-    best_val_acc_char = float(max(val_acc_char)) if val_acc_char is not None and len(val_acc_char) else None
-    final_val_acc_char = float(val_acc_char[-1]) if val_acc_char is not None and len(val_acc_char) else None
-    best_val_acc_pos = float(max(val_acc_pos)) if val_acc_pos is not None and len(val_acc_pos) else None
-    final_val_acc_pos = float(val_acc_pos[-1]) if val_acc_pos is not None and len(val_acc_pos) else None
+    train_loss_char = results.get("train_loss_char")
+    val_loss_char = results.get("val_loss_char")
+    train_loss_pos = results.get("train_loss_pos")
+    val_loss_pos = results.get("val_loss_pos")
+
+    best_train_acc_char = _safe_max(train_acc_char)
+    best_train_acc_pos = _safe_max(train_acc_pos)
+    final_train_acc_char = _safe_last(train_acc_char)
+    final_train_acc_pos = _safe_last(train_acc_pos)
+
+    best_val_acc_char = _safe_max(val_acc_char)
+    best_val_acc_pos = _safe_max(val_acc_pos)
+    final_val_acc_char = _safe_last(val_acc_char)
+    final_val_acc_pos = _safe_last(val_acc_pos)
+
+    best_epoch_char = _safe_best_epoch_1based(val_acc_char)
+    best_epoch_pos = _safe_best_epoch_1based(val_acc_pos)
+
+    final_train_loss_char = _safe_last(train_loss_char)
+    final_val_loss_char = _safe_last(val_loss_char)
+    final_train_loss_pos = _safe_last(train_loss_pos)
+    final_val_loss_pos = _safe_last(val_loss_pos)
+
+    gap_char = _gap(final_train_acc_char, final_val_acc_char)
+    gap_pos = _gap(final_train_acc_pos, final_val_acc_pos)
+    overfit_flag = bool((gap_char is not None and gap_char > 10.0) or (gap_pos is not None and gap_pos > 10.0))
 
     mode_suffix = "allchars" if predict_all_chars else ("sector" if prep["use_sector_mode"] else "coord")
     acc_suffix = "_acc" if USE_ACCELERATION else ""
@@ -120,10 +181,23 @@ def run_one_experiment(prep, model_type, hidden_size, lr, weight_decay, dropout_
         "dropout": dropout_rate,
         "optimizer": optim,
         "actual_epochs": actual_epochs,
+        "best_train_acc_char": best_train_acc_char,
+        "best_train_acc_pos": best_train_acc_pos,
+        "final_train_acc_char": final_train_acc_char,
+        "final_train_acc_pos": final_train_acc_pos,
         "best_val_acc_char": best_val_acc_char,
         "best_val_acc_pos": best_val_acc_pos,
         "final_val_acc_char": final_val_acc_char,
         "final_val_acc_pos": final_val_acc_pos,
+        "best_epoch_char": best_epoch_char,
+        "best_epoch_pos": best_epoch_pos,
+        "gap_char": _round2(gap_char),
+        "gap_pos": _round2(gap_pos),
+        "overfit_flag": overfit_flag,
+        "final_train_loss_char": final_train_loss_char,
+        "final_val_loss_char": final_val_loss_char,
+        "final_train_loss_pos": final_train_loss_pos,
+        "final_val_loss_pos": final_val_loss_pos,
     }
     metric_path = os.path.join(results_dir, "metric.json")
     with open(metric_path, "w", encoding="utf-8") as f:
