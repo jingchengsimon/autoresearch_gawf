@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 # =========================
 
 AIDER_MODEL = "openai/QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ"
-TRAIN_CMD = "python train_gawf.py"
+TRAIN_CMD = "python -u train_gawf.py"
 PROGRAM_FILE = "program_gawf.md"
 TRAIN_FILE = "train_gawf.py"
 METRICS_FILE = "results/rnn/models/metrics.json"
