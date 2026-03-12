@@ -25,4 +25,5 @@ results.tsv
 stimuli/*
 results/*
 logs/*
+scripts_unused/*
 output.log

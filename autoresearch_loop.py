@@ -280,9 +280,11 @@ def call_aider(prompt: str, trial_index: int) -> None:
 
 def run_training(dataset_suffix: str) -> tuple[str, int]:
     timeout = TRAIN_TIMEOUT_40H if dataset_suffix == "40h" else TRAIN_TIMEOUT_4H
-    cmd = f"{TRAIN_CMD} > {shlex.quote(OUTPUT_LOG)} 2>&1"
+    # Stream training logs to both terminal and output.log for easier monitoring
+    cmd = f"{TRAIN_CMD} 2>&1 | tee {shlex.quote(OUTPUT_LOG)}"
     try:
-        p = run_cmd(cmd, timeout=timeout, capture_output=True)
+        # Let stdout/stderr pass through so the user can see training progress live
+        p = run_cmd(cmd, timeout=timeout, capture_output=False)
         return ("ok" if p.returncode == 0 else "train_error", p.returncode)
     except subprocess.TimeoutExpired:
         return ("timeout", 124)
