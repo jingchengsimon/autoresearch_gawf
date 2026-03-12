@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 # =========================
 
 AIDER_MODEL = "openai/QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ"
-TRAIN_CMD = "python -u train_gawf.py"
+TRAIN_CMD = "python train_gawf.py"
 PROGRAM_FILE = "program_gawf.md"
 TRAIN_FILE = "train_gawf.py"
 METRICS_FILE = "metrics.json"
@@ -24,8 +24,8 @@ LOG_DIR = "logs"
 LOOP_LOG = os.path.join(LOG_DIR, "loop.log")
 
 # Search control
-MAX_TOTAL_EXPERIMENTS = 5
-MAX_4H_EXPERIMENTS = min(MAX_TOTAL_EXPERIMENTS, 6)
+MAX_TOTAL_EXPERIMENTS = 20
+MAX_4H_EXPERIMENTS = min(MAX_TOTAL_EXPERIMENTS, 10)
 MAX_NO_IMPROVEMENT = 5
 
 # Success criteria, aligned with program.md
@@ -414,7 +414,13 @@ def main() -> None:
         trial_index = total_trials + 1
         log_loop(f"[loop] trial={trial_index}, dataset={current_dataset_suffix or '4h'}")
         log_loop("[loop] calling aider...")
+
+        before = get_head_commit()
         call_aider(prompt, trial_index)
+        after = get_head_commit()
+        if before == after:
+            log_loop("[loop] WARNING: aider made no code change")
+            
         log_loop("[loop] aider finished.")
 
         # Local commit after aider edit

@@ -7,15 +7,9 @@ Current autoresearch should stay in sector mode.
 
 Do NOT rename or delete existing variables, function arguments, config keys, helper names, or logging field names unless absolutely necessary.
 
-Preserve all existing interfaces and signatures across files.
+Prefer changing only values, not names. 
 
-In particular:
-- do not rename config variables only for style
-- do not rename arguments expected by helper functions
-- do not rename metric field names
-- do not change dataset mode names unless explicitly required
-
-Prefer changing only values, not names.
+You must change at least one hyperparameter in train_gawf.py. If no change is made the experiment is invalid.
 
 Datasets:
 Stage 1: 4h dataset (default, no suffix)
@@ -60,7 +54,9 @@ dropout_rate
 num_epochs
 feedback parameters (for gawf)
 
-num_epochs may increase for convergence but should not exceed 150.
+If model_type != "gawf", do not touch FB_START_EPOCH.
+
+num_epochs may increase for convergence but should not exceed 50.
 
 Overfitting detection:
 
