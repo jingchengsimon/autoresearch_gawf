@@ -9,11 +9,11 @@ from utils.train_helpers import save_results, log_experiment_config, log_experim
 # Minimal config for autoresearch
 DATA_SUFFIX = ""           # "" = 4h, "40h" = 40h
 DATASET_MODE = "sector"    # "sector" | "coord" | "allchars"
-NUM_EPOCHS = 10
+NUM_EPOCHS = 50
 SEED = 42
 USE_MMAP = True
 USE_ACCELERATION = True
-RESULT_SUFFIX = "rnn"
+RESULT_SUFFIX = "rnn_phase1"
 
 MODEL_PHASES = ["rnn"]
 
@@ -26,7 +26,7 @@ NOFB = False
 FB_START_EPOCH = 999999
 
 PHASE_OVERRIDES = {
-    # "gawf": {"lr": 0.0005, "nofb": True, "fb_start_epoch": 10},
+    "rnn": {"lr": 0.0005, "nofb": True, "fb_start_epoch": 10},
 }
 
 
