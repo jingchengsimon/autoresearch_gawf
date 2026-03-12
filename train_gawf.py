@@ -8,8 +8,8 @@ from utils.train_helpers import save_results, log_experiment_config, log_experim
 
 # Minimal config for autoresearch
 DATA_SUFFIX = ""           # "" = 4h, "40h" = 40h
-DATASET_MODE = "sector"    # "sector" | "coord" | "allchars"
-NUM_EPOCHS = 50            # Increased from 10 to allow better convergence
+DATASET_MODE = "coord"     # "sector" | "coord" | "allchars"
+NUM_EPOCHS = 100           # Increased from 50 to allow better convergence
 SEED = 42
 USE_MMAP = True
 USE_ACCELERATION = False
@@ -26,7 +26,7 @@ NOFB = False
 FB_START_EPOCH = 999999
 
 PHASE_OVERRIDES = {
-    "rnn": {"lr": 0.001, "nofb": True, "fb_start_epoch": 10},
+    "rnn": {"lr": 0.001, "nofb": True, "fb_start_epoch": 10, "dropout": 0.3},
     "gawf": {"lr": 0.0001, "nofb": True, "fb_start_epoch": 10, "hidden_size": 512, "dropout": 0.5},
 }
 
