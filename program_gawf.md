@@ -54,17 +54,13 @@ dropout_rate
 num_epochs
 feedback parameters (for gawf)
 
-If model_type != "gawf", do not touch FB_START_EPOCH.
-
-num_epochs may increase for convergence but should not exceed 50.
+NOTICE:
+1. num_epochs should not exceed 30.
+2. If model_type != "gawf", do not touch FB_START_EPOCH.
 
 Overfitting detection:
 
-overfit_flag = true if
-
-gap_char > 10
-OR
-gap_pos > 10
+overfit_flag = true if gap_char > 10 OR gap_pos > 10
 
 Dataset escalation rule:
 
