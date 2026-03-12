@@ -20,13 +20,13 @@ MODEL_PHASES = ["rnn"]     # Changed to focus only on RNN for Phase 1
 HIDDEN_SIZE = 512
 LR = 0.001  # Slightly increased learning rate to potentially improve validation accuracy
 WEIGHT_DECAY = 1e-4  # Added weight decay to avoid over-constraining
-DROPOUT = 0.3  # Reduced dropout to maintain training accuracy while controlling overfitting
+DROPOUT = 0.25  # Slightly reduced dropout to maintain training accuracy while controlling overfitting
 OPTIMIZER = "adamw"
 NOFB = True    # Set to True for Phase 1 RNN optimization
 FB_START_EPOCH = 10  # Start feedback at epoch 10
 
 PHASE_OVERRIDES = {
-    "rnn": {"lr": 0.001, "nofb": True, "fb_start_epoch": 10, "dropout": 0.3},
+    "rnn": {"lr": 0.001, "nofb": True, "fb_start_epoch": 10, "dropout": 0.25},
     "gawf": {"lr": 0.0001, "nofb": True, "fb_start_epoch": 10, "hidden_size": 512, "dropout": 0.5},
 }
 
@@ -232,7 +232,6 @@ def main():
         [HIDDEN_SIZE],
         [LR],
         [WEIGHT_DECAY],
-        [DROPOUT],
     )
 
     for idx, model_type in enumerate(MODEL_PHASES):
