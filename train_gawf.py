@@ -17,7 +17,7 @@ RESULT_SUFFIX = ""  # Empty suffix for baseline 4h dataset as per Phase 1
 
 MODEL_PHASES = ["rnn"]     # Changed to focus only on RNN for Phase 1
 
-HIDDEN_SIZE = 512
+HIDDEN_SIZE = 256          # Reduced from 512 to be more conservative for Phase 1
 LR = 0.001                 # Slightly reduced learning rate to be more conservative for Phase 1
 WEIGHT_DECAY = 1e-4  # Added weight decay to avoid over-constraining
 DROPOUT_RATE = 0.25  # Slightly reduced dropout to maintain training accuracy while controlling overfitting
