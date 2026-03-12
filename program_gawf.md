@@ -5,7 +5,7 @@ Editable file: train_gawf.py only. Prefer small, controlled changes. Avoid large
 Do not change from sector mode to coord mode unless explicitly instructed.
 Current autoresearch should stay in sector mode.
 
-Do NOT rename existing variables, function arguments, config keys, helper names, or logging field names unless absolutely necessary.
+Do NOT rename or delete existing variables, function arguments, config keys, helper names, or logging field names unless absolutely necessary.
 
 Preserve all existing interfaces and signatures across files.
 

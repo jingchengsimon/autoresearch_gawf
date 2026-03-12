@@ -232,6 +232,7 @@ def main():
         [HIDDEN_SIZE],
         [LR],
         [WEIGHT_DECAY],
+        [DROPOUT_RATE],
     )
 
     for idx, model_type in enumerate(MODEL_PHASES):
