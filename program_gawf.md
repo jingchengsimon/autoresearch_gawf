@@ -1,75 +1,67 @@
 # GAWF autoresearch program
 
-Editable file: train_gawf.py only. Prefer small, controlled changes. Avoid large simultaneous modifications.
+Editable file: train_gawf.py only.
+
+Prefer small, controlled changes.
+Avoid large simultaneous modifications.
+You must change at least one hyperparameter in train_gawf.py. If no change is made, the experiment is invalid.
 
 Do not change from sector mode to coord mode unless explicitly instructed.
-Current autoresearch should stay in sector mode.
+Current autoresearch must stay in sector mode.
 
-Do NOT rename or delete existing variables, function arguments, config keys, helper names, or logging field names unless absolutely necessary.
+Do NOT rename, delete, or restyle existing variables, function arguments, config keys, helper names, metric field names, or logging field names unless absolutely necessary.
+Prefer changing only values, not names.
 
-Prefer changing only values, not names. 
+Dataset:
+Use only the 40h dataset.
+Set dataset_suffix = "40h".
 
-You must change at least one hyperparameter in train_gawf.py. If no change is made the experiment is invalid.
+Current objective:
+Do NOT focus on overfitting reduction for now.
+The goal is to minimize validation loss, with the following priority:
 
-Datasets:
-Stage 1: 4h dataset (default, no suffix)
-Stage 2: 40h dataset (suffix="40h")
+1. lowest val_char_loss
+2. lowest val_pos_loss
 
-Primary objective:
-Improve validation character accuracy (val_acc_char) while keeping training accuracy strong and reducing the train–validation generalization gap.
+Primary ranking metric:
+- lower val_char_loss is always better
 
-Metric definitions:
+Secondary ranking metric:
+- if val_char_loss is similar, prefer lower val_pos_loss
 
-gap_char = train_acc_char - val_acc_char
-gap_pos  = train_acc_pos  - val_acc_pos
-
-Success criteria:
-
-A modification is considered successful only if:
-
-1. val_acc_char increases
-   OR stays within ±0.5% of the previous best
-
-2. train_acc_char does NOT decrease by more than 1.0%
-
-3. preference is given to configurations that reduce gap_char
-
-Experiment ranking priority:
-
-1. higher val_acc_char
-2. smaller gap_char
-3. stable train_acc_char
-4. secondary metric: val_acc_pos
-
-Avoid solutions that improve validation only by collapsing training accuracy.
+If both losses are similar, prefer the simpler and smaller change.
 
 Allowed modifications:
+- model_type (rnn / gru / lstm / gawf / ffn / dann)
+- hidden_size
+- learning_rate
+- optimizer
+- weight_decay
+- dropout_rate
+- num_epochs
+- feedback parameters for gawf only
 
-model_type (rnn / gru / lstm / gawf)
-hidden_size
-learning_rate
-optimizer
-weight_decay
-dropout_rate
-num_epochs
-feedback parameters (for gawf)
-
-NOTICE:
-1. num_epochs should not exceed 30.
-2. If model_type != "gawf", do not touch FB_START_EPOCH.
-
-Overfitting detection:
-
-overfit_flag = true if gap_char > 10 OR gap_pos > 10
-
-Dataset escalation rule:
-
-If 10 distinct experiments on the 4h dataset still show large overfitting
-and val_acc_char does not significantly improve,
-stop searching on 4h and switch to the 40h dataset.
+Restrictions:
+1. num_epochs must not exceed 30
+2. if model_type != "gawf", do not touch FB_START_EPOCH
+3. FB_START_EPOCH may be changed only during GAWF optimization
 
 Research phases:
-
 Phase 1: RNN optimization
 Phase 2: GAWF optimization
 Phase 3: FFN / DANN comparison
+
+Success criteria:
+A modification is considered successful if it reduces val_char_loss.
+If val_char_loss is effectively unchanged, then a lower val_pos_loss is preferred.
+
+Avoid changes that do not improve either val_char_loss or val_pos_loss.
+
+When proposing the next experiment:
+- modify only train_gawf.py
+- make exactly one small experimental change
+- prioritize val_char_loss
+- use val_pos_loss as the second criterion
+- do not restate files
+- do not explain the whole program
+- directly apply the code change

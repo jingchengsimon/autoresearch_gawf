@@ -7,7 +7,7 @@ from utils.train_helpers import save_results, log_experiment_config, log_experim
 
 
 # Minimal config for autoresearch
-DATA_SUFFIX = ""           # "" = 4h, "40h" = 40h
+DATA_SUFFIX = "40h"           # "40h" = 40h
 DATASET_MODE = "sector"     # "sector" | "coord" | "allchars"
 NUM_EPOCHS = 30           # Increased from 50 to allow better convergence
 SEED = 42
@@ -56,13 +56,19 @@ def _safe_max(arr):
     return _round2(max(arr))
 
 
+def _safe_min(arr):
+    if arr is None or len(arr) == 0:
+        return None
+    return _round2(min(arr))
+
+
 def _safe_best_epoch_1based(arr):
     if arr is None or len(arr) == 0:
         return None
     best_idx = 0
     best_val = arr[0]
     for i, v in enumerate(arr):
-        if v > best_val:
+        if v < best_val:
             best_val = v
             best_idx = i
     return _round2(best_idx + 1)
@@ -140,16 +146,20 @@ def run_one_experiment(prep, model_type, hidden_size, lr, weight_decay, dropout_
 
     best_train_acc_char = _safe_max(train_acc_char)
     best_train_acc_pos = _safe_max(train_acc_pos)
+    best_train_loss_char = _safe_min(train_loss_char)
+    best_train_loss_pos = _safe_min(train_loss_pos)
     final_train_acc_char = _safe_last(train_acc_char)
     final_train_acc_pos = _safe_last(train_acc_pos)
 
     best_val_acc_char = _safe_max(val_acc_char)
     best_val_acc_pos = _safe_max(val_acc_pos)
+    best_val_loss_char = _safe_min(val_loss_char)
+    best_val_loss_pos = _safe_min(val_loss_pos)
     final_val_acc_char = _safe_last(val_acc_char)
     final_val_acc_pos = _safe_last(val_acc_pos)
 
-    best_epoch_char = _safe_best_epoch_1based(val_acc_char)
-    best_epoch_pos = _safe_best_epoch_1based(val_acc_pos)
+    best_epoch_char = _safe_best_epoch_1based(val_loss_char)
+    best_epoch_pos = _safe_best_epoch_1based(val_loss_pos)
 
     final_train_loss_char = _safe_last(train_loss_char)
     final_val_loss_char = _safe_last(val_loss_char)
@@ -183,21 +193,25 @@ def run_one_experiment(prep, model_type, hidden_size, lr, weight_decay, dropout_
         "actual_epochs": actual_epochs,
         "best_train_acc_char": best_train_acc_char,
         "best_train_acc_pos": best_train_acc_pos,
-        "final_train_acc_char": final_train_acc_char,
-        "final_train_acc_pos": final_train_acc_pos,
+        "best_train_loss_char": best_train_loss_char,
+        "best_train_loss_pos": best_train_loss_pos,
+        # "final_train_acc_char": final_train_acc_char,
+        # "final_train_acc_pos": final_train_acc_pos,
         "best_val_acc_char": best_val_acc_char,
         "best_val_acc_pos": best_val_acc_pos,
-        "final_val_acc_char": final_val_acc_char,
-        "final_val_acc_pos": final_val_acc_pos,
+        "best_val_loss_char": best_val_loss_char,
+        "best_val_loss_pos": best_val_loss_pos,
+        # "final_val_acc_char": final_val_acc_char,
+        # "final_val_acc_pos": final_val_acc_pos,
         "best_epoch_char": best_epoch_char,
         "best_epoch_pos": best_epoch_pos,
-        "gap_char": _round2(gap_char),
-        "gap_pos": _round2(gap_pos),
-        "overfit_flag": overfit_flag,
-        "final_train_loss_char": final_train_loss_char,
-        "final_val_loss_char": final_val_loss_char,
-        "final_train_loss_pos": final_train_loss_pos,
-        "final_val_loss_pos": final_val_loss_pos,
+        # "gap_char": _round2(gap_char),
+        # "gap_pos": _round2(gap_pos),
+        # "overfit_flag": overfit_flag,
+        # "final_train_loss_char": final_train_loss_char,
+        # "final_val_loss_char": final_val_loss_char,
+        # "final_train_loss_pos": final_train_loss_pos,
+        # "final_val_loss_pos": final_val_loss_pos,
     }
     metric_path = ("./metrics.json") # os.path.join(results_dir, "metrics.json")
     with open(metric_path, "w", encoding="utf-8") as f:

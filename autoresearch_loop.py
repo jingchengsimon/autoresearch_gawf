@@ -25,19 +25,17 @@ LOOP_LOG = os.path.join(LOG_DIR, "loop.log")
 
 # Search control
 MAX_TOTAL_EXPERIMENTS = 20
-MAX_4H_EXPERIMENTS = min(MAX_TOTAL_EXPERIMENTS, 10)
 MAX_NO_IMPROVEMENT = 5
 
 # Success criteria, aligned with program.md
 VAL_CHAR_TOL = 0.5       # val_acc_char tolerance
 TRAIN_CHAR_DROP_LIMIT = 1.0
 
-# If current dataset is 4h and 10 distinct experiments still overfit, switch to 40h
-SWITCH_TO_40H_AFTER_4H_TRIALS = 10
+# Dataset configuration
+DATASET_SUFFIX = "40h"
 
-# Training timeout in seconds
-TRAIN_TIMEOUT_4H = 3 * 3600
-TRAIN_TIMEOUT_40H = 8 * 3600
+# Training timeout in seconds (40h only)
+TRAIN_TIMEOUT = 8 * 3600
 
 # Aider env
 ENV_OVERRIDES = {
@@ -70,6 +68,17 @@ def log_loop(msg: str) -> None:
             f.write(text + "\n")
     except Exception:
         # Logging failures should not crash the loop
+        pass
+
+
+def log_loop_file_only(msg: str) -> None:
+    """Write to logs/loop.log only (no terminal output). Use for git info etc."""
+    text = msg.rstrip("\n")
+    try:
+        ensure_logs_dir()
+        with open(LOOP_LOG, "a", encoding="utf-8") as f:
+            f.write(text + "\n")
+    except Exception:
         pass
 
 
@@ -149,10 +158,12 @@ def git_commit_all(message: str) -> None:
     run_cmd("git add train_gawf.py", check=False)
     p = run_cmd(f'git commit -m {shlex.quote(message)}', capture_output=True)
     if p.returncode != 0:
-        # No changes is okay
         if "nothing to commit" not in (p.stdout + p.stderr).lower():
-            print(p.stdout)
-            print(p.stderr, file=sys.stderr)
+            log_loop("[loop] ERROR: git commit failed")
+            if p.stdout:
+                print(p.stdout)
+            if p.stderr:
+                print(p.stderr, file=sys.stderr)
 
 
 def maybe_commit_results_snapshot() -> None:
@@ -162,8 +173,11 @@ def maybe_commit_results_snapshot() -> None:
     p = run_cmd('git commit -m "chore: snapshot metrics/results"', capture_output=True)
     if p.returncode != 0:
         if "nothing to commit" not in (p.stdout + p.stderr).lower():
-            print(p.stdout)
-            print(p.stderr, file=sys.stderr)
+            log_loop("[loop] ERROR: git snapshot commit failed")
+            if p.stdout:
+                print(p.stdout)
+            if p.stderr:
+                print(p.stderr, file=sys.stderr)
 
 
 def read_text(path: str) -> str:
@@ -278,12 +292,11 @@ def call_aider(prompt: str, trial_index: int) -> None:
         )
 
 
-def run_training(dataset_suffix: str) -> tuple[str, int]:
-    timeout = TRAIN_TIMEOUT_40H if dataset_suffix == "40h" else TRAIN_TIMEOUT_4H
-    # Stream training logs to both terminal and output.log for easier monitoring
-    cmd = f"{TRAIN_CMD} 2>&1 | tee {shlex.quote(OUTPUT_LOG)}"
+def run_training() -> tuple[str, int]:
+    timeout = TRAIN_TIMEOUT
+    # 将训练输出重定向到 output.log，不再在终端中实时打印
+    cmd = f"{TRAIN_CMD} > {shlex.quote(OUTPUT_LOG)} 2>&1"
     try:
-        # Let stdout/stderr pass through so the user can see training progress live
         p = run_cmd(cmd, timeout=timeout, capture_output=False)
         return ("ok" if p.returncode == 0 else "train_error", p.returncode)
     except subprocess.TimeoutExpired:
@@ -334,28 +347,12 @@ def is_improved(
     return False
 
 
-def should_switch_to_40h(
-    four_h_trials: int,
-    last_metrics: Optional[Dict[str, Any]],
-    best_metrics_4h: Optional[Dict[str, Any]],
-) -> bool:
-    if four_h_trials < SWITCH_TO_40H_AFTER_4H_TRIALS:
-        return False
-    if last_metrics is None:
-        return False
-    overfit = bool(last_metrics.get("overfit_flag", False))
-    if not overfit:
-        return False
-    # Optional extra safeguard: if even best 4h val is still weak
-    return True
-
-
 def description_from_metrics(metrics: Optional[Dict[str, Any]]) -> str:
     if not metrics:
         return "missing metrics"
     return (
         f"model={metrics.get('model_type')} "
-        f"data={metrics.get('dataset_suffix', '') or '4h'} "
+        f"data={metrics.get('dataset_suffix', '')} "
         f"val_char={metrics.get('best_val_acc_char')} "
         f"gap_char={metrics.get('gap_char')} "
         f"overfit={metrics.get('overfit_flag')}"
@@ -375,29 +372,17 @@ def main() -> None:
     if not file_exists(TRAIN_FILE):
         raise FileNotFoundError(f"Missing {TRAIN_FILE}")
 
-    log_loop(f"[loop] branch={get_head_branch()} commit={get_head_commit()}")
+    log_loop_file_only(f"[loop] branch={get_head_branch()} commit={get_head_commit()}")
 
     best_metrics_global: Optional[Dict[str, Any]] = None
-    best_metrics_4h: Optional[Dict[str, Any]] = None
-
     no_improvement_count = 0
     total_trials = 0
-    four_h_trials = 0
-
-    current_dataset_suffix = ""
+    dataset_suffix = DATASET_SUFFIX
 
     while total_trials < MAX_TOTAL_EXPERIMENTS:
         if file_exists(STOP_FILE):
             log_loop("[loop] stop file detected, exiting gracefully.")
             break
-
-        # Escalate to 40h if needed
-        if current_dataset_suffix == "" and should_switch_to_40h(four_h_trials, best_metrics_4h, best_metrics_4h):
-            log_loop("[loop] switching from 4h to 40h")
-            changed = set_dataset_suffix_in_train_file("40h")
-            if changed:
-                git_commit_all("chore: switch dataset from 4h to 40h")
-            current_dataset_suffix = "40h"
 
         # Build Aider prompt
         if best_metrics_global is None:
@@ -412,7 +397,7 @@ def main() -> None:
             prompt = summarize_metrics(best_metrics_global)
 
         trial_index = total_trials + 1
-        log_loop(f"[loop] trial={trial_index}, dataset={current_dataset_suffix or '4h'}")
+        log_loop(f"[loop] trial={trial_index}, dataset={dataset_suffix}")
         log_loop("[loop] calling aider...")
 
         before = get_head_commit()
@@ -420,7 +405,7 @@ def main() -> None:
         after = get_head_commit()
         if before == after:
             log_loop("[loop] WARNING: aider made no code change")
-            
+
         log_loop("[loop] aider finished.")
 
         # Local commit after aider edit
@@ -428,7 +413,7 @@ def main() -> None:
 
         # Run training
         log_loop("[loop] starting training...")
-        status, returncode = run_training(current_dataset_suffix)
+        status, returncode = run_training()
         log_loop(f"[loop] training finished with status={status}")
         metrics = load_metrics_or_none()
         commit = get_head_commit()
@@ -454,8 +439,6 @@ def main() -> None:
             )
             no_improvement_count += 1
             total_trials += 1
-            if current_dataset_suffix == "":
-                four_h_trials += 1
             log_loop(f"[loop] training failed: status={status}, returncode={returncode}")
             if no_improvement_count >= MAX_NO_IMPROVEMENT:
                 log_loop("[loop] too many consecutive failures/no improvement, stopping.")
@@ -471,11 +454,6 @@ def main() -> None:
         else:
             no_improvement_count += 1
             status_label = "discard"
-
-        if current_dataset_suffix == "":
-            four_h_trials += 1
-            if best_metrics_4h is None or is_improved(metrics, best_metrics_4h):
-                best_metrics_4h = metrics
 
         # Save results row
         append_tsv_row(
