@@ -7,7 +7,7 @@ from utils.train_helpers import save_results, log_experiment_config, log_experim
 
 
 # Minimal config for autoresearch
-DATA_SUFFIX = "40h"           # "40h" = 40h
+DATA_SUFFIX = "40h-float32"           # "40h-float32" = 40h with float32 data
 DATASET_MODE = "sector"     # "sector" | "coord" | "allchars"
 NUM_EPOCHS = 30           # Increased from 50 to allow better convergence
 SEED = 42

@@ -13,8 +13,8 @@ Do NOT rename, delete, or restyle existing variables, function arguments, config
 Prefer changing only values, not names.
 
 Dataset:
-Use only the 40h dataset.
-Set dataset_suffix = "40h".
+Use only the 40h-float32 dataset.
+Set dataset_suffix = "40h-float32".
 
 Current objective:
 Do NOT focus on overfitting reduction for now.

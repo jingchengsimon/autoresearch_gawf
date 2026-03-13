@@ -32,7 +32,7 @@ VAL_CHAR_TOL = 0.5       # val_acc_char tolerance
 TRAIN_CHAR_DROP_LIMIT = 1.0
 
 # Dataset configuration
-DATASET_SUFFIX = "40h"
+DATASET_SUFFIX = "40h-float32"
 
 # Training timeout in seconds (40h only)
 TRAIN_TIMEOUT = 8 * 3600
@@ -189,12 +189,12 @@ def set_dataset_suffix_in_train_file(target_suffix: str) -> bool:
     Minimal, explicit text replacement:
     DATA_SUFFIX = ""
     or
-    DATA_SUFFIX = "40h"
+    DATA_SUFFIX = "40h-float32"
     """
     path = Path(TRAIN_FILE)
     text = path.read_text(encoding="utf-8")
     old1 = 'DATA_SUFFIX = ""'
-    old2 = 'DATA_SUFFIX = "40h"'
+    old2 = 'DATA_SUFFIX = "40h-float32"'
     new = f'DATA_SUFFIX = "{target_suffix}"'
     if old1 in text:
         text = text.replace(old1, new, 1)
@@ -425,7 +425,7 @@ def main() -> None:
                 [
                     timestamp,
                     commit,
-                    current_dataset_suffix,
+                    dataset_suffix,
                     "",
                     "0.0",
                     "0.0",
