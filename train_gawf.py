@@ -18,7 +18,7 @@ RESULT_SUFFIX = ""  # Empty suffix for baseline 4h dataset as per Phase 1
 MODEL_PHASES = ["rnn"]     # Changed to focus only on RNN for Phase 1
 
 HIDDEN_SIZE = 256          # Reduced from 512 to be more conservative for Phase 1
-LR = 0.0005                 # Changed from 0.001 to a more conservative learning rate for Phase 1
+LR = 0.001                 # Changed from 0.0005 to test a higher learning rate for Phase 1
 WEIGHT_DECAY = 1e-4  # Added weight decay to avoid over-constraining
 DROPOUT_RATE = 0.25  # Increased dropout to reduce overfitting (was 0.15)
 OPTIMIZER = "adamw"
@@ -26,7 +26,7 @@ NOFB = True    # Set to True for Phase 1 RNN optimization
 FB_START_EPOCH = 10  # Start feedback at epoch 10
 
 PHASE_OVERRIDES = {
-    "rnn": {"lr": 0.0005, "nofb": True, "fb_start_epoch": 10, "dropout_rate": 0.25},
+    "rnn": {"lr": 0.001, "nofb": True, "fb_start_epoch": 10, "dropout_rate": 0.25},
     "gawf": {"lr": 0.0001, "nofb": True, "fb_start_epoch": 10, "hidden_size": 512, "dropout_rate": 0.5},
 }
 
